@@ -21,13 +21,13 @@ function inscrireJoueur() {
         }
         const joueur = {
             nom: nomJoueur,
-            heuresInscription: new Date().toLocaleString(),
+            heuresInscription: new Date().toLocaleTimeString(), // Affiche seulement l'heure
             matchsJoues: 0,
             matchsAttendus: 0
         };
         joueurs.push(joueur);
         afficherJoueurs();
-        nomJoueurInput.value = '';
+        nomJoueurInput.value = ''; // Réinitialiser le champ d'entrée
     } else {
         alert("Veuillez entrer un nom valide !");
     }
@@ -41,15 +41,19 @@ nomJoueurInput.addEventListener('keydown', (event) => {
     }
 });
 
-// Function to clear the player list
+// Function to clear the player list and history
 function reinitialiserListe() {
-    joueurs = [];
-    joueursSelectionnes = [];
-    afficherJoueurs();
-    messageMatch.textContent = '';
+    const confirmation = confirm("Êtes-vous sûr de vouloir réinitialiser ? Cela supprimera la liste des inscrits et l'historique des matchs.");
+    
+    if (confirmation) {
+        joueurs = [];
+        joueursSelectionnes = [];
+        historiqueMatchs.innerHTML = ''; // Vider l'historique des matchs
+        afficherJoueurs();
+        messageMatch.textContent = '';
+    }
 }
 
-// Listen for the reset button event
 btnReinitialiser.addEventListener('click', reinitialiserListe);
 
 // Display list of registered players with checkboxes
@@ -63,7 +67,7 @@ function afficherJoueurs() {
         checkbox.id = `joueur${index}`;
         checkbox.value = joueur.nom;
 
-        checkbox.checked = joueursSelectionnes.includes(joueur.nom); // Affichi le statut sélectionné
+        checkbox.checked = joueursSelectionnes.includes(joueur.nom); // Affiche le statut sélectionné
 
         checkbox.addEventListener('change', () => {
             const nom = joueur.nom;
@@ -84,14 +88,14 @@ function afficherJoueurs() {
         });
 
         li.appendChild(checkbox);
-        li.appendChild(document.createTextNode(`${joueur.nom} - Inscrit à ${joueur.heuresInscription} - Matchs joués: `));
+        li.appendChild(document.createTextNode(`${joueur.nom} - Inscrit à ${joueur.heuresInscription} - Joué(s): `));
 
         const matchsJouesSpan = document.createElement('span');
         matchsJouesSpan.textContent = joueur.matchsJoues;
         matchsJouesSpan.classList.toggle('text-red', joueur.matchsJoues === 0);
         li.appendChild(matchsJouesSpan);
 
-        li.appendChild(document.createTextNode(` - Matchs attendus: `));
+        li.appendChild(document.createTextNode(` - Attendu(s): `));
 
         const matchsAttendusSpan = document.createElement('span');
         matchsAttendusSpan.textContent = joueur.matchsAttendus;
@@ -132,8 +136,10 @@ btnCommencer.addEventListener('click', () => {
 // End the match
 btnFinir.addEventListener('click', () => {
     const matchHistoryItem = document.createElement('li');
-    matchHistoryItem.textContent = `${new Date().toLocaleString()} - Match terminé entre ${joueursSelectionnes.join(', ')}`;
-    historiqueMatchs.appendChild(matchHistoryItem);
+    matchHistoryItem.textContent = `${new Date().toLocaleString()} - Terminé: ${joueursSelectionnes.join(', ')}`; 
+
+    // Insérer le nouvel élément en tête de liste
+    historiqueMatchs.insertBefore(matchHistoryItem, historiqueMatchs.firstChild); 
     
     joueursSelectionnes.forEach(nom => {
         const joueur = joueurs.find(j => j.nom === nom);
