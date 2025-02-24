@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Match</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gestion de Match de 4 Joueurs</h1>
+
+        <h2>Inscription</h2>
+        <input type="text" id="nomJoueur" placeholder="Nom du joueur">
+        <button id="btnInscrire">S'inscrire</button>
+        <button id="btnReinitialiser">Réinitialiser</button> <!-- Nouveau bouton -->
+
+        <h2>Liste d'Inscription</h2>
+        <ul id="listeJoueurs"></ul>
+
+        <h2>Sélectionner Joueurs</h2>
+        <ul id="selectionJoueurs"></ul>
+        <button id="btnCommencer" disabled>Commencer Match</button>
+        <div id="messageMatch"></div>
+        <button id="btnFinir" disabled>Match Fini</button>
+
+        <h2>Historique des Matchs</h2>
+        <ul id="historiqueMatchs"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
