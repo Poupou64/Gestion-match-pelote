@@ -141,7 +141,7 @@ function afficherJoueurs(data) {
 
             checkbox.addEventListener('change', () => {
                 const joueurRef = ref(database, 'joueurs/' + key);
-                update(joueurRef, { selectionne: checkbox.checked });
+                update(joueurRef, { selectionne: checkbox.checked }); // Mise à jour dans Firebase
 
                 const nom = joueur.nom;
 
@@ -150,14 +150,14 @@ function afficherJoueurs(data) {
                         joueursSelectionnes.push(nom);
                     } else {
                         alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                        checkbox.checked = false; // re-désélectionner
+                        checkbox.checked = false; // Re-désélectionner visuellement
                     }
                 } else {
                     joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                 }
 
-                // Vérifier le nombre de joueurs sélectionnés
-                btnCommencer.disabled = joueursSelectionnes.length !== 4; // Activer/désactiver le bouton selon la sélection
+                // Mettre à jour l'état du bouton "Commencer Match"
+                btnCommencer.disabled = joueursSelectionnes.length != 4; 
             });
 
             li.appendChild(checkbox);
@@ -173,6 +173,7 @@ function afficherJoueurs(data) {
             matchsAttendusSpan.textContent = ` / Attendu(s): ${joueur.matchsAttendus}`;
             li.appendChild(matchsAttendusSpan);
 
+            // Ajout du bouton pour désinscription
             const btnDesinscrire = document.createElement('button');
             btnDesinscrire.textContent = 'Désinscrire';
             btnDesinscrire.onclick = () => {
