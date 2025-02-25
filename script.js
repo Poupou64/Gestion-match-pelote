@@ -46,12 +46,10 @@ onValue(matchRef, (snapshot) => {
     const matchData = snapshot.val();
     if (matchData) {
         messageMatch.textContent = `Match en cours: ${matchData.joueurs.join(', ')}`;
-        btnFinir.disabled = false;
-        btnCommencer.disabled = true; // Désactiver le bouton "Commencer" si un match est en cours
+        setBoutonEtatMatchEnCours();
     } else {
         messageMatch.textContent = ''; // Réinitialiser si aucun match n'est en cours
-        btnFinir.disabled = true;
-        btnCommencer.disabled = false; // Réactiver le bouton "Commencer"
+        setBoutonEtatMatchNonEnCours();
     }
 });
 
@@ -126,6 +124,7 @@ function reinitialiserListe() {
                 joueursSelectionnes = [];
                 historiqueMatchs.innerHTML = ''; // Vider l'historique des matchs
                 messageMatch.textContent = ''; // Réinitialiser le message de match
+                setBoutonEtatMatchNonEnCours(); // Réinitialiser les boutons
             })
             .catch((error) => {
                 console.error("Erreur lors de la réinitialisation de la base de données :", error);
@@ -191,6 +190,17 @@ function afficherJoueurs(data) {
     }
 }
 
+// Fonctions pour gérer l'état des boutons
+function setBoutonEtatMatchEnCours() {
+    btnFinir.disabled = false; // Activer le bouton "Finir"
+    btnCommencer.disabled = true; // Désactiver le bouton "Commencer"
+}
+
+function setBoutonEtatMatchNonEnCours() {
+    btnFinir.disabled = true; // Désactiver le bouton "Finir"
+    btnCommencer.disabled = false; // Activer le bouton "Commencer"
+}
+
 // Démarrer le match
 btnCommencer.addEventListener('click', () => {
     if (joueursSelectionnes.length === 4) {
@@ -204,8 +214,7 @@ btnCommencer.addEventListener('click', () => {
             .then(() => {
                 // Mets à jour l'état de l'interface
                 messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
-                btnFinir.disabled = false;
-                btnCommencer.disabled = true;
+                setBoutonEtatMatchEnCours(); // Appel de la fonction ici
 
                 // Réinitialiser les matchs attendus pour chaque joueur
                 joueursSelectionnes.forEach(nom => {
@@ -244,8 +253,7 @@ btnFinir.addEventListener('click', () => {
             // Réinitialiser les états
             messageMatch.textContent = '';
             joueursSelectionnes = [];
-            btnFinir.disabled = true;
-            btnCommencer.disabled = false; // Réactiver le bouton Commencer
+            setBoutonEtatMatchNonEnCours(); // Appel de la fonction ici
 
             // Déselectionner tous les checkboxes
             const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
