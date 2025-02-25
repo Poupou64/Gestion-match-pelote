@@ -28,12 +28,13 @@ const listeJoueurs = document.getElementById('listeJoueurs');
 const messageMatch = document.getElementById('messageMatch');
 const historiqueMatchs = document.getElementById('historiqueMatchs');
 const loadingIndicator = document.createElement('div'); // Indicateur de chargement
+
 loadingIndicator.textContent = 'En cours d\'inscription...';
 loadingIndicator.style.display = 'none'; // Masqué par défaut
 document.body.appendChild(loadingIndicator); // Ajouter à la fin du body
 let joueursSelectionnes = [];
 
-// Référence à la base de données des joueurs
+// Références Firebase
 const listeJoueursRef = ref(database, 'joueurs');
 const matchRef = ref(database, 'matchEnCours'); // Référence pour les matchs en cours
 const historiqueMatchsRef = ref(database, 'historiqueMatchs'); // Référence pour l'historique des matchs
@@ -54,7 +55,7 @@ onValue(matchRef, (snapshot) => {
     } else {
         messageMatch.textContent = ''; // Réinitialiser si aucun match n'est en cours
         btnFinir.disabled = true;
-        btnCommencer.disabled = false;
+        btnCommencer.disabled = false; // Réactiver le bouton "Commencer"
     }
 });
 
@@ -157,6 +158,7 @@ function afficherJoueurs(data) {
                     joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                 }
 
+                // Activer/Désactiver le bouton "Commencer Match"
                 btnCommencer.disabled = joueursSelectionnes.length !== 4;
             });
 
@@ -205,6 +207,8 @@ btnCommencer.addEventListener('click', () => {
             .catch((error) => {
                 console.error("Erreur lors du démarrage du match :", error);
             });
+    } else {
+        alert("Veuillez sélectionner 4 joueurs avant de commencer le match.");
     }
 });
 
