@@ -132,14 +132,13 @@ function afficherJoueurs(data) {
         for (const key in data) {
             const joueur = data[key];
 
-            // S'assurer que le joueur a un nom et une heure d'inscription valides
+            // Vérifiez si le joueur a un nom valide
             const nom = joueur.nom || "Nom inexistant";
             const heuresInscription = joueur.heuresInscription || "Heure non spécifiée";
             const matchsJoues = joueur.matchsJoues || 0;
             const matchsAttendus = joueur.matchsAttendus || 0;
 
             const li = document.createElement('li');
-
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `joueur${key}`;
@@ -149,8 +148,6 @@ function afficherJoueurs(data) {
             checkbox.addEventListener('change', () => {
                 const joueurRef = ref(database, 'joueurs/' + key);
                 update(joueurRef, { selectionne: checkbox.checked }); // Mise à jour dans Firebase
-
-                const nom = joueur.nom;
 
                 if (checkbox.checked) {
                     if (joueursSelectionnes.length < 4) {
@@ -208,7 +205,6 @@ btnCommencer.addEventListener('click', async () => {
             messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
             setBoutonEtatMatchEnCours();
 
-            // Mettre à jour les informations des joueurs pour le match
             for (const nom of joueursSelectionnes) {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 await update(joueurRef, { matchsAttendus: 0 });
@@ -248,11 +244,7 @@ btnFinir.addEventListener('click', async () => {
 
         // Réinitialiser l'état pour permettre un nouveau match
         messageMatch.textContent = '';
-
-        // Réinitialiser la liste des joueurs sélectionnés
         joueursSelectionnes = [];
-        
-        // Désactiver le bouton "Match Fini"
         btnFinir.disabled = true; // Griser le bouton
 
         // Déselectionner tous les checkboxes et mettre à jour Firebase
