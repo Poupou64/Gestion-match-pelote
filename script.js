@@ -59,16 +59,12 @@ onValue(matchRef, (snapshot) => {
 onValue(historiqueMatchsRef, (snapshot) => {
     const data = snapshot.val();
     historiqueMatchs.innerHTML = ''; // Vider l'historique avant d'afficher les nouvelles données
-    const matchIds = new Set(); // Utiliser un Set pour éviter les doublons
     if (data) {
         for (const key in data) {
             const match = data[key];
-            if (!matchIds.has(match.date)) { // Vérifier les doublons par date
-                matchIds.add(match.date);
-                const li = document.createElement('li');
-                li.textContent = `${match.date} - Terminé: ${match.joueurs.join(', ')}`;
-                historiqueMatchs.appendChild(li);
-            }
+            const li = document.createElement('li');
+            li.textContent = `${match.date} - Terminé: ${match.joueurs.join(', ')}`;
+            historiqueMatchs.appendChild(li);
         }
     }
 });
@@ -85,7 +81,6 @@ async function nomJoueurDejaInscrit(nom) {
 // Fonction d'inscription
 async function inscrireJoueur() {
     const nomJoueur = nomJoueurInput.value.trim();
-    console.log("Nom du joueur à inscrire:", nomJoueur); // Debug
     if (nomJoueur) {
         // Vérifier si le joueur est déjà inscrit
         if (await nomJoueurDejaInscrit(nomJoueur)) {
@@ -93,14 +88,14 @@ async function inscrireJoueur() {
             return;
         }
 
-        const newPlayerRef = ref(database, 'joueurs/' + Date.now()); // Utiliser l'heure actuelle comme clé
+        const newPlayerRef = ref(database, 'joueurs/' + Date.now());
         try {
             await set(newPlayerRef, {
                 nom: nomJoueur,
                 heuresInscription: new Date().toLocaleTimeString(),
                 matchsJoues: 0,
                 matchsAttendus: 0,
-                selectionne: false // Ajouter cette propriété initialement
+                selectionne: false
             });
             nomJoueurInput.value = ''; // Réinitialiser le champ d'entrée
         } catch (error) {
@@ -116,19 +111,14 @@ async function inscrireJoueur() {
 function reinitialiserListe() {
     const confirmation = confirm("Êtes-vous sûr de vouloir réinitialiser ? Cela supprimera la liste des inscrits et l'historique des matchs.");
     if (confirmation) {
-        // Supprimer tous les joueurs de la base de données
         remove(listeJoueursRef)
-            .then(() => {
-                return remove(matchRef); // Supprimer le match en cours
-            })
-            .then(() => {
-                return remove(historiqueMatchsRef); // Supprimer l'historique des matchs
-            })
+            .then(() => { return remove(matchRef); })
+            .then(() => { return remove(historiqueMatchsRef); })
             .then(() => {
                 joueursSelectionnes = [];
-                historiqueMatchs.innerHTML = ''; // Vider l'historique des matchs
-                messageMatch.textContent = ''; // Réinitialiser le message de match
-                setBoutonEtatMatchNonEnCours(); // Réinitialiser les boutons
+                historiqueMatchs.innerHTML = '';
+                messageMatch.textContent = '';
+                setBoutonEtatMatchNonEnCours();
             })
             .catch((error) => {
                 console.error("Erreur lors de la réinitialisation de la base de données :", error);
@@ -150,7 +140,7 @@ function afficherJoueurs(data) {
             checkbox.id = `joueur${key}`;
             checkbox.value = key;
 
-            checkbox.checked = joueur.selectionne || false; // Met à jour selon l'état dans Firebase
+            checkbox.checked = joueur.selectionne || false;
 
             checkbox.addEventListener('change', () => {
                 const joueurRef = ref(database, 'joueurs/' + key);
@@ -175,13 +165,11 @@ function afficherJoueurs(data) {
             li.appendChild(checkbox);
             li.appendChild(document.createTextNode(`${joueur.nom} - Inscrit à ${joueur.heuresInscription} - Joué(s): `));
 
-            // Span pour "matchs joués"
             const matchsJouesSpan = document.createElement('span');
             matchsJouesSpan.className = 'matchs-joues';
             matchsJouesSpan.textContent = joueur.matchsJoues;
             li.appendChild(matchsJouesSpan);
 
-            // Span pour "matchs attendus"
             const matchsAttendusSpan = document.createElement('span');
             matchsAttendusSpan.className = 'matchs-attendus';
             matchsAttendusSpan.textContent = ` / Attendu(s): ${joueur.matchsAttendus}`;
@@ -216,8 +204,7 @@ btnCommencer.addEventListener('click', () => {
     if (joueursSelectionnes.length === 4) {
         const matchData = {
             date: new Date().toISOString(),
-            joueurs: joueursSelectionnes,
-            matchEnCours: true // Ajouter le champ pour indiquer que le match est en cours
+            joueurs: joueursSelectionnes
         };
 
         // Enregistrer les informations du match dans la base de données
@@ -225,7 +212,7 @@ btnCommencer.addEventListener('click', () => {
             .then(() => {
                 messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
                 setBoutonEtatMatchEnCours();
-                
+
                 // Réinitialiser les matchs attendus pour chaque joueur
                 joueursSelectionnes.forEach(nom => {
                     const joueurRef = ref(database, 'joueurs/' + nom);
@@ -262,19 +249,19 @@ btnFinir.addEventListener('click', () => {
 
             // Réinitialiser les états
             messageMatch.textContent = '';
-            joueursSelectionnes = []; // Réinitialiser les joueurs sélectionnés
-            setBoutonEtatMatchNonEnCours(); // Permettre la sélection d'un nouveau match
+            joueursSelectionnes = [];
+            setBoutonEtatMatchNonEnCours();
 
             // Déselectionner tous les checkboxes
             const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
-                checkbox.checked = false; // Déselectionner visuellement
+                checkbox.checked = false;
                 const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-                update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
+                update(joueurRef, { selectionne: false });
             });
 
             // Réinitialiser la référence du match
-            remove(matchRef); // Supprime le match en cours de Firebase
+            remove(matchRef);
         })
         .catch((error) => {
             console.error("Erreur lors de l'enregistrement dans l'historique :", error);
@@ -284,12 +271,8 @@ btnFinir.addEventListener('click', () => {
 // Écoutez les événements
 btnInscrire.addEventListener('click', inscrireJoueur);
 btnReinitialiser.addEventListener('click', reinitialiserListe);
-
-// Écoute de la saisie de l'utilisateur pour la touche "Entrée"
 nomJoueurInput.addEventListener('keypress', (event) => {
-    console.log('Touche pressée:', event.key); // Debug
     if (event.key === 'Enter') {
-        console.log('Entrée détectée, inscription du joueur');
         inscrireJoueur();
     }
 });
