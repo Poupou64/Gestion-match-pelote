@@ -51,6 +51,10 @@ onValue(matchRef, (snapshot) => {
         messageMatch.textContent = `Match en cours: ${matchData.joueurs.join(', ')}`;
         btnFinir.disabled = false;
         btnCommencer.disabled = true; // Désactiver le bouton "Commencer" si un match est en cours
+    } else {
+        messageMatch.textContent = ''; // Réinitialiser si aucun match n'est en cours
+        btnFinir.disabled = true;
+        btnCommencer.disabled = false;
     }
 });
 
@@ -187,6 +191,7 @@ btnCommencer.addEventListener('click', () => {
         // Enregistrer les informations du match dans la base de données
         set(matchRef, matchData)
             .then(() => {
+                // Mets à jour l'état de l'interface
                 messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
                 btnFinir.disabled = false;
                 btnCommencer.disabled = true;
@@ -217,15 +222,17 @@ btnFinir.addEventListener('click', () => {
             matchHistoryItemElement.textContent = `${matchHistoryItem.date} - Terminé: ${joueursSelectionnes.join(', ')}`;
             historiqueMatchs.insertBefore(matchHistoryItemElement, historiqueMatchs.firstChild);
 
+            // Mettre à jour les matchs joués pour chaque joueur
             joueursSelectionnes.forEach(nom => {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
             });
 
+            // Réinitialiser les états
             messageMatch.textContent = '';
             joueursSelectionnes = [];
             btnFinir.disabled = true;
-            btnCommencer.disabled = true;
+            btnCommencer.disabled = false; // Réactiver le bouton Commencer
 
             // Déselectionner tous les checkboxes
             const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
