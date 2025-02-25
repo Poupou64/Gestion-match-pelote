@@ -247,21 +247,21 @@ btnFinir.addEventListener('click', () => {
                 update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
             });
 
-            // Réinitialiser les états
+            // Réinitialiser l'état
             messageMatch.textContent = '';
-            joueursSelectionnes = [];
-            setBoutonEtatMatchNonEnCours();
+            joueursSelectionnes = []; // Réinitialiser les joueurs sélectionnés
+            setBoutonEtatMatchNonEnCours(); // Permettre la sélection d'un nouveau match
 
-            // Déselectionner tous les checkboxes
+            // Déselectionner tous les checkboxes et mettre à jour Firebase
             const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
+                checkbox.checked = false; // Déselectionner visuellement
                 const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-                update(joueurRef, { selectionne: false });
+                update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
             });
 
             // Réinitialiser la référence du match
-            remove(matchRef);
+            remove(matchRef); // Supprime le match en cours de Firebase
         })
         .catch((error) => {
             console.error("Erreur lors de l'enregistrement dans l'historique :", error);
