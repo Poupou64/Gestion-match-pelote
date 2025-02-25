@@ -96,7 +96,7 @@ async function inscrireJoueur() {
                 matchsAttendus: 0,
                 selectionne: false
             });
-            nomJoueurInput.value = ''; 
+            nomJoueurInput.value = ''; // Réinitialiser le champ après l'inscription
         } catch (error) {
             console.error("Erreur lors de l'inscription du joueur : ", error);
             alert("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
@@ -131,6 +131,13 @@ function afficherJoueurs(data) {
     if (data) {
         for (const key in data) {
             const joueur = data[key];
+
+            // S'assurer que le joueur a un nom et une heure d'inscription valides
+            const nom = joueur.nom || "Nom inexistant";
+            const heuresInscription = joueur.heuresInscription || "Heure non spécifiée";
+            const matchsJoues = joueur.matchsJoues || 0;
+            const matchsAttendus = joueur.matchsAttendus || 0;
+
             const li = document.createElement('li');
 
             const checkbox = document.createElement('input');
@@ -161,17 +168,7 @@ function afficherJoueurs(data) {
             });
 
             li.appendChild(checkbox);
-            li.appendChild(document.createTextNode(`${joueur.nom} - Inscrit à ${joueur.heuresInscription} - Joué(s): `));
-
-            const matchsJouesSpan = document.createElement('span');
-            matchsJouesSpan.className = 'matchs-joues';
-            matchsJouesSpan.textContent = joueur.matchsJoues;
-            li.appendChild(matchsJouesSpan);
-
-            const matchsAttendusSpan = document.createElement('span');
-            matchsAttendusSpan.className = 'matchs-attendus';
-            matchsAttendusSpan.textContent = ` / Attendu(s): ${joueur.matchsAttendus}`;
-            li.appendChild(matchsAttendusSpan);
+            li.appendChild(document.createTextNode(`${nom} - Inscrit à ${heuresInscription} - Joué(s): ${matchsJoues} / Attendu(s): ${matchsAttendus}`));
 
             // Ajout du bouton pour désinscription
             const btnDesinscrire = document.createElement('button');
@@ -262,7 +259,7 @@ btnFinir.addEventListener('click', async () => {
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false; // Déselectionner visuellement
-            checkbox.disabled = false; // Permet la sélection de nouveaux joueurs
+            checkbox.disabled = false; // Permettre la sélection de nouveaux joueurs
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
             update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
         });
