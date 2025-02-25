@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove, update, query, orderByChild, equalTo, get, push } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
-// Votre configuration Firebase
+// Configuration Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAyd1LEO2nwW7gQxhF4vl47IogXtrFVa3o",
     authDomain: "base-de-donnees-pelote-blagnac.firebaseapp.com",
@@ -35,13 +35,13 @@ const listeJoueursRef = ref(database, 'joueurs');
 const matchRef = ref(database, 'matchEnCours');
 const historiqueMatchsRef = ref(database, 'historiqueMatchs');
 
-// Écouter les changements sur la liste de joueurs
+// Écoute des changements sur la liste de joueurs
 onValue(listeJoueursRef, (snapshot) => {
     const data = snapshot.val();
     afficherJoueurs(data);
 });
 
-// Écouter les changements sur le match en cours
+// Écoute des changements sur le match en cours
 onValue(matchRef, (snapshot) => {
     const matchData = snapshot.val();
     if (matchData) {
@@ -53,7 +53,7 @@ onValue(matchRef, (snapshot) => {
     }
 });
 
-// Écouter les changements sur l'historique des matchs
+// Écoute des changements sur l'historique des matchs
 onValue(historiqueMatchsRef, (snapshot) => {
     const data = snapshot.val();
     historiqueMatchs.innerHTML = '';
@@ -67,7 +67,7 @@ onValue(historiqueMatchsRef, (snapshot) => {
     }
 });
 
-// Vérifier si le nom du joueur est déjà inscrit
+// Vérifie si le nom du joueur est déjà inscrit
 async function nomJoueurDejaInscrit(nom) {
     const joueursRef = ref(database, 'joueurs');
     const joueursQuery = query(joueursRef, orderByChild('nom'), equalTo(nom));
@@ -79,14 +79,15 @@ async function nomJoueurDejaInscrit(nom) {
 // Fonction d'inscription
 async function inscrireJoueur() {
     const nomJoueur = nomJoueurInput.value.trim();
+    console.log("Nom du joueur à inscrire:", nomJoueur); // Debug
     if (nomJoueur) {
-        // Vérifier si le joueur est déjà inscrit
+        // Vérifie si le joueur est déjà inscrit
         if (await nomJoueurDejaInscrit(nomJoueur)) {
             alert("Ce joueur est déjà inscrit !");
             return;
         }
 
-        const newPlayerRef = ref(database, 'joueurs/' + Date.now()); // Utiliser l'heure actuelle comme clé
+        const newPlayerRef = ref(database, 'joueurs/' + Date.now()); // Utilise l'heure actuelle comme clé
         try {
             await set(newPlayerRef, {
                 nom: nomJoueur,
@@ -95,7 +96,7 @@ async function inscrireJoueur() {
                 matchsAttendus: 0,
                 selectionne: false // Ajouter cette propriété initialement
             });
-            nomJoueurInput.value = ''; // Réinitialiser le champ d'entrée
+            nomJoueurInput.value = ''; // Réinitialise le champ d'entrée
         } catch (error) {
             console.error("Erreur lors de l'inscription du joueur : ", error);
             alert("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
@@ -270,9 +271,11 @@ btnFinir.addEventListener('click', () => {
 btnInscrire.addEventListener('click', inscrireJoueur);
 btnReinitialiser.addEventListener('click', reinitialiserListe);
 
-// Écouter l'input pour la touche "Entrée"
+// Écoute de la saisie de l'utilisateur pour la touche "Entrée"
 nomJoueurInput.addEventListener('keypress', (event) => {
+    console.log('Touche pressée:', event.key); // Debug
     if (event.key === 'Enter') {
+        console.log('Entrée détectée, inscription du joueur');
         inscrireJoueur();
     }
 });
