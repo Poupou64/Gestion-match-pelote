@@ -157,7 +157,7 @@ function afficherJoueurs(data) {
                 }
 
                 // Mettre à jour l'état du bouton "Commencer Match"
-                btnCommencer.disabled = joueursSelectionnes.length != 4; 
+                btnCommencer.disabled = joueursSelectionnes.length !== 4; 
             });
 
             li.appendChild(checkbox);
@@ -232,18 +232,19 @@ btnFinir.addEventListener('click', async () => {
     };
 
     try {
-        await push(historiqueMatchsRef, matchHistoryItem);
+        await push(historiqueMatchsRef, matchHistoryItem); // Pousser à l'historique
 
         const matchHistoryItemElement = document.createElement('li');
         matchHistoryItemElement.textContent = `${matchHistoryItem.date} - Terminé: ${joueursSelectionnes.join(', ')}`;
         historiqueMatchs.insertBefore(matchHistoryItemElement, historiqueMatchs.firstChild);
 
+        // Mettre à jour les matchs joués pour chaque joueur
         await Promise.all(
             joueursSelectionnes.map(async (nom) => {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 const joueurSnap = await get(joueurRef);
                 const joueur = joueurSnap.val();
-                await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
+                await update(joueurRef, { matchsJoues: (joueur.matchsJoués || 0) + 1 });
             })
         );
 
@@ -260,13 +261,13 @@ btnFinir.addEventListener('click', async () => {
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false; // Déselectionner visuellement
-            checkbox.disabled = false; // Assurez-vous qu'ils sont activés pour de nouvelles sélections
+            checkbox.disabled = false; // Permet la sélection de nouveaux joueurs
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
             update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
         });
 
-        // Réinitialiser la référence du match
-        await remove(matchRef); // Supprime le match en cours de Firebase
+        // Supprime le match en cours de Firebase
+        await remove(matchRef); 
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
     }
