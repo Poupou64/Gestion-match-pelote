@@ -27,11 +27,7 @@ const nomJoueurInput = document.getElementById('nomJoueur');
 const listeJoueurs = document.getElementById('listeJoueurs');
 const messageMatch = document.getElementById('messageMatch');
 const historiqueMatchs = document.getElementById('historiqueMatchs');
-const loadingIndicator = document.createElement('div'); // Indicateur de chargement
 
-loadingIndicator.textContent = 'En cours d\'inscription...';
-loadingIndicator.style.display = 'none'; // Masqué par défaut
-document.body.appendChild(loadingIndicator); // Ajouter à la fin du body
 let joueursSelectionnes = [];
 
 // Références Firebase
@@ -92,7 +88,6 @@ async function inscrireJoueur() {
             return;
         }
 
-        loadingIndicator.style.display = 'block'; // Afficher l'indicateur de chargement
         const newPlayerRef = ref(database, 'joueurs/' + Date.now()); // Utiliser l'heure actuelle comme clé
         try {
             await set(newPlayerRef, {
@@ -106,8 +101,6 @@ async function inscrireJoueur() {
         } catch (error) {
             console.error("Erreur lors de l'inscription du joueur : ", error);
             alert("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
-        } finally {
-            loadingIndicator.style.display = 'none'; // Cacher l'indicateur de chargement
         }
     } else {
         alert("Veuillez entrer un nom valide !");
@@ -118,10 +111,26 @@ async function inscrireJoueur() {
 function reinitialiserListe() {
     const confirmation = confirm("Êtes-vous sûr de vouloir réinitialiser ? Cela supprimera la liste des inscrits et l'historique des matchs.");
     if (confirmation) {
-        remove(listeJoueursRef); // Supprime tous les joueurs de la base de données
-        joueursSelectionnes = [];
-        historiqueMatchs.innerHTML = ''; // Vider l'historique des matchs
-        messageMatch.textContent = '';
+        // Supprimer tous les joueurs de la base de données
+        remove(listeJoueursRef)
+            .then(() => {
+                // Supprimer le match en cours
+                return remove(matchRef);
+            })
+            .then(() => {
+                // Supprimer l'historique des matchs
+                return remove(historiqueMatchsRef);
+            })
+            .then(() => {
+                // Réinitialiser les états locaux
+                joueursSelectionnes = [];
+                historiqueMatchs.innerHTML = ''; // Vider l'historique des matchs
+                messageMatch.textContent = ''; // Réinitialiser le message de match
+            })
+            .catch((error) => {
+                console.error("Erreur lors de la réinitialisation de la base de données :", error);
+                alert("Une erreur est survenue lors de la réinitialisation. Veuillez réessayer.");
+            });
     }
 }
 
