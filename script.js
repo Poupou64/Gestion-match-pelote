@@ -157,11 +157,7 @@ function afficherJoueurs(data) {
                 }
 
                 // Vérifier le nombre de joueurs sélectionnés
-                if (joueursSelectionnes.length === 4) {
-                    btnCommencer.disabled = false; // Activer le bouton
-                } else {
-                    btnCommencer.disabled = true; // Désactiver le bouton
-                }
+                btnCommencer.disabled = joueursSelectionnes.length !== 4; // Activer/désactiver le bouton selon la sélection
             });
 
             li.appendChild(checkbox);
@@ -250,20 +246,26 @@ btnFinir.addEventListener('click', async () => {
             })
         );
 
+        // Réinitialiser l'état pour permettre un nouveau match
         messageMatch.textContent = '';
-        joueursSelectionnes = [];
-        setBoutonEtatMatchNonEnCours(); 
 
-        // Réinitialiser tous les checkboxes
+        // Réinitialiser la liste des joueurs sélectionnés
+        joueursSelectionnes = [];
+        
+        // Désactiver le bouton "Match Fini"
+        btnFinir.disabled = true; // Griser le bouton
+
+        // Déselectionner tous les checkboxes et mettre à jour Firebase
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
-            checkbox.checked = false; 
-            checkbox.disabled = false; // Assurez-vous que les checkboxes sont activées pour de nouvelles sélections
+            checkbox.checked = false; // Déselectionner visuellement
+            checkbox.disabled = false; // Assurez-vous qu'ils sont activés pour de nouvelles sélections
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-            update(joueurRef, { selectionne: false }); 
+            update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
         });
 
-        await remove(matchRef); 
+        // Réinitialiser la référence du match
+        await remove(matchRef); // Supprime le match en cours de Firebase
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
     }
