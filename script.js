@@ -211,6 +211,7 @@ btnCommencer.addEventListener('click', async () => {
             messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
             setBoutonEtatMatchEnCours();
 
+            // Mettre à jour les informations des joueurs pour le match
             for (const nom of joueursSelectionnes) {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 await update(joueurRef, { matchsAttendus: 0 });
@@ -244,7 +245,7 @@ btnFinir.addEventListener('click', async () => {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 const joueurSnap = await get(joueurRef);
                 const joueur = joueurSnap.val();
-                await update(joueurRef, { matchsJoues: (joueur.matchsJoués || 0) + 1 });
+                await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
             })
         );
 
