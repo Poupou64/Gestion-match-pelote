@@ -98,6 +98,7 @@ function reinitialiserListe() {
 function afficherJoueurs(data) {
     listeJoueurs.innerHTML = '';
     if (data) {
+        console.log("Données des joueurs :", data); // Debug
         for (const key in data) {
             const joueur = data[key];
             const li = document.createElement('li');
@@ -109,10 +110,14 @@ function afficherJoueurs(data) {
 
             checkbox.checked = joueur.selectionne || false; // Met à jour selon l'état dans Firebase
 
+            console.log(`Checkbox pour ${joueur.nom} est ${joueur.selectionne}`); // Debug
+
             checkbox.addEventListener('change', () => {
                 // Mettre à jour la sélection dans Firebase
                 const joueurRef = ref(database, 'joueurs/' + key);
-                update(joueurRef, { selectionne: checkbox.checked });
+                update(joueurRef, { selectionne: checkbox.checked })
+                    .then(() => console.log("Mise à jour de la sélection réussie"))
+                    .catch(error => console.error("Erreur lors de la mise à jour de la sélection :", error));
 
                 const nom = joueur.nom;
 
