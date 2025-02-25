@@ -150,13 +150,18 @@ function afficherJoueurs(data) {
                         joueursSelectionnes.push(nom);
                     } else {
                         alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                        checkbox.checked = false;
+                        checkbox.checked = false; // re-désélectionner
                     }
                 } else {
                     joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                 }
 
-                btnCommencer.disabled = joueursSelectionnes.length !== 4;
+                // Vérifier le nombre de joueurs sélectionnés
+                if (joueursSelectionnes.length === 4) {
+                    btnCommencer.disabled = false; // Activer le bouton
+                } else {
+                    btnCommencer.disabled = true; // Désactiver le bouton
+                }
             });
 
             li.appendChild(checkbox);
@@ -246,12 +251,14 @@ btnFinir.addEventListener('click', async () => {
         );
 
         messageMatch.textContent = '';
-        joueursSelectionnes = []; 
+        joueursSelectionnes = [];
         setBoutonEtatMatchNonEnCours(); 
 
+        // Réinitialiser tous les checkboxes
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false; 
+            checkbox.disabled = false; // Assurez-vous que les checkboxes sont activées pour de nouvelles sélections
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
             update(joueurRef, { selectionne: false }); 
         });
