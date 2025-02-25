@@ -1,6 +1,6 @@
 // Imports de Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, update, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
 // Votre configuration Firebase
 const firebaseConfig = {
@@ -27,7 +27,10 @@ const nomJoueurInput = document.getElementById('nomJoueur');
 const listeJoueurs = document.getElementById('listeJoueurs');
 const messageMatch = document.getElementById('messageMatch');
 const historiqueMatchs = document.getElementById('historiqueMatchs');
-
+const loadingIndicator = document.createElement('div'); // Indicateur de chargement
+loadingIndicator.textContent = 'En cours d\'inscription...';
+loadingIndicator.style.display = 'none'; // Masqué par défaut
+document.body.appendChild(loadingIndicator); // Ajouter à la fin du body
 let joueursSelectionnes = [];
 
 // Référence à la base de données des joueurs
@@ -35,21 +38,46 @@ const listeJoueursRef = ref(database, 'joueurs');
 
 // Écouter les changements sur la liste de joueurs
 onValue(listeJoueursRef, (snapshot) => {
-    afficherJoueurs(snapshot.val());
+    const data = snapshot.val();
+    afficherJoueurs(data);
 });
 
+// Fonction pour vérifier les doublons
+async function nomJoueurDejaInscrit(nom) {
+    const joueursRef = ref(database, 'joueurs');
+    const joueursQuery = query(joueursRef, orderByChild('nom'), equalTo(nom));
+
+    const snapshot = await get(joueursQuery);
+    return snapshot.exists(); // Renvoie true si le joueur existe déjà
+}
+
 // Fonction d'inscription
-function inscrireJoueur() {
+async function inscrireJoueur() {
     const nomJoueur = nomJoueurInput.value.trim();
     if (nomJoueur) {
+        // Vérifier si le joueur est déjà inscrit
+        if (await nomJoueurDejaInscrit(nomJoueur)) {
+            alert("Ce joueur est déjà inscrit !");
+            return;
+        }
+
+        loadingIndicator.style.display = 'block'; // Afficher l'indicateur de chargement
         const newPlayerRef = ref(database, 'joueurs/' + Date.now()); // Utiliser l'heure actuelle comme clé
-        set(newPlayerRef, {
-            nom: nomJoueur,
-            heuresInscription: new Date().toLocaleTimeString(),
-            matchsJoues: 0,
-            matchsAttendus: 0
-        });
-        nomJoueurInput.value = ''; // Réinitialiser le champ d'entrée
+        try {
+            await set(newPlayerRef, {
+                nom: nomJoueur,
+                heuresInscription: new Date().toLocaleTimeString(),
+                matchsJoues: 0,
+                matchsAttendus: 0,
+                selectionne: false // Ajouter cette propriété initialement
+            });
+            nomJoueurInput.value = ''; // Réinitialiser le champ d'entrée
+        } catch (error) {
+            console.error("Erreur lors de l'inscription du joueur : ", error);
+            alert("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+        } finally {
+            loadingIndicator.style.display = 'none'; // Cacher l'indicateur de chargement
+        }
     } else {
         alert("Veuillez entrer un nom valide !");
     }
@@ -77,11 +105,15 @@ function afficherJoueurs(data) {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `joueur${key}`;
-            checkbox.value = joueur.nom;
+            checkbox.value = key;
 
-            checkbox.checked = joueursSelectionnes.includes(joueur.nom); // Affiche le statut sélectionné
+            checkbox.checked = joueur.selectionne || false; // Met à jour selon l'état dans Firebase
 
             checkbox.addEventListener('change', () => {
+                // Mettre à jour la sélection dans Firebase
+                const joueurRef = ref(database, 'joueurs/' + key);
+                update(joueurRef, { selectionne: checkbox.checked });
+
                 const nom = joueur.nom;
 
                 if (checkbox.checked) {
@@ -89,7 +121,7 @@ function afficherJoueurs(data) {
                         joueursSelectionnes.push(nom);
                     } else {
                         alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                        checkbox.checked = false; // Déselectionner le checkbox
+                        checkbox.checked = false;
                     }
                 } else {
                     joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
@@ -109,7 +141,7 @@ function afficherJoueurs(data) {
             btnDesinscrire.textContent = 'Désinscrire';
             btnDesinscrire.onclick = () => {
                 const joueurRef = ref(database, 'joueurs/' + key);
-                remove(joueurRef); // Supprime le joueur de la base de données
+                remove(joueurRef);
             };
 
             li.appendChild(btnDesinscrire);
@@ -127,7 +159,9 @@ btnCommencer.addEventListener('click', () => {
 
         joueursSelectionnes.forEach(nom => {
             const joueurRef = ref(database, 'joueurs/' + nom);
-            update(joueurRef, { matchsAttendus: 0 }); // Reset expected matches
+            update(joueurRef, { matchsAttendus: 0 }).catch((error) => {
+                console.error("Erreur lors de la réinitialisation des matchs attendus :", error);
+            });
         });
     }
 });
@@ -136,11 +170,13 @@ btnCommencer.addEventListener('click', () => {
 btnFinir.addEventListener('click', () => {
     const matchHistoryItem = document.createElement('li');
     matchHistoryItem.textContent = `${new Date().toLocaleString()} - Terminé: ${joueursSelectionnes.join(', ')}`;
-    historiqueMatchs.insertBefore(matchHistoryItem, historiqueMatchs.firstChild); 
+    historiqueMatchs.insertBefore(matchHistoryItem, historiqueMatchs.firstChild);
 
     joueursSelectionnes.forEach(nom => {
         const joueurRef = ref(database, 'joueurs/' + nom);
-        update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 }); // Increment matches played
+        update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 }).catch((error) => {
+            console.error("Erreur lors de la mise à jour des matchs joués :", error);
+        });
     });
 
     messageMatch.textContent = '';
