@@ -153,17 +153,23 @@ function afficherJoueurs(data) {
                     if (checkbox.checked) {
                         if (joueursSelectionnes.length < 4) {
                             joueursSelectionnes.push(nom);
+                            // Vérifiez si 4 joueurs sont sélectionnés pour activer le bouton "Commencer Match"
+                            if (joueursSelectionnes.length === 4) {
+                                btnCommencer.disabled = false; // Activer le bouton
+                            }
                         } else {
+                            // Si 4 joueurs sont déjà sélectionnés, vous ne pouvez pas en sélectionner un de plus
                             checkbox.checked = false; // Re-désélectionner la case à cocher
                             alert("Vous ne pouvez sélectionner que 4 joueurs !");
                         }
                     } else {
                         // Si la case est décochée, retirer le joueur de la liste des sélectionnés
                         joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
+                        // Désactiver le bouton si moins de 4 joueurs sélectionnés
+                        if (joueursSelectionnes.length < 4) {
+                            btnCommencer.disabled = true; // Désactiver le bouton
+                        }
                     }
-
-                    // Vérifiez si 4 joueurs sont sélectionnés pour activer le bouton "Commencer Match"
-                    btnCommencer.disabled = joueursSelectionnes.length !== 4; 
                 });
 
                 // Créer des éléments pour les matchs joués et attendus
@@ -320,4 +326,4 @@ nomJoueurInput.addEventListener('keypress', (event) => {
 });
 
 // Version
-console.log("Version 1.7");
+console.log("Version 1.8");
