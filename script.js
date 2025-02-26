@@ -126,15 +126,14 @@ async function reinitialiserListe() {
 
 // Afficher les joueurs inscrits
 function afficherJoueurs(data) {
-    listeJoueurs.innerHTML = '';
+    listeJoueurs.innerHTML = ''; // Vide la liste avant de la remplir
     if (data) {
         for (const key in data) {
             const joueur = data[key];
 
-            // Vérifiez que le joueur a un nom valide avant d'afficher
             if (joueur && joueur.nom && joueur.heuresInscription) {
                 const nom = joueur.nom;
-                const heuresInscription = joueur.heuresInscription;
+                const heuresInscription = joueur.heuresInscription || "Inconnu";
                 const matchsJoues = joueur.matchsJoues || 0;
                 const matchsAttendus = joueur.matchsAttendus || 0;
 
@@ -170,7 +169,7 @@ function afficherJoueurs(data) {
                 const matchsAttendusSpan = document.createElement('span');
                 matchsAttendusSpan.textContent = `Attendu(s): ${matchsAttendus}`;
 
-                // Appliquer la couleur selon les matchs joués et attendus
+                // Appliquer les couleurs
                 if (matchsJoues === 0) {
                     matchsJouesSpan.classList.add('text-red'); // Classe pour le texte rouge
                 }
@@ -229,7 +228,7 @@ btnCommencer.addEventListener('click', async () => {
 
             for (const nom of joueursSelectionnes) {
                 const joueurRef = ref(database, 'joueurs/' + nom);
-                await update(joueurRef, { matchsAttendus: 0 });
+                await update(joueurRef, { matchsAttendus: 0 }); // Reset des matchs attendus
             }
         } catch (error) {
             console.error("Erreur lors du démarrage du match :", error);
@@ -254,13 +253,24 @@ btnFinir.addEventListener('click', async () => {
         matchHistoryItemElement.textContent = `${matchHistoryItem.date} - Terminé: ${joueursSelectionnes.join(', ')}`;
         historiqueMatchs.insertBefore(matchHistoryItemElement, historiqueMatchs.firstChild);
 
-        // Mettre à jour les matchs joués pour chaque joueur
+        // Mettre à jour les matchs joués et attendus pour chaque joueur
+        const tousLesJoueursRef = ref(database, 'joueurs');
+        const snapshot = await get(tousLesJoueursRef);
+        const joueursData = snapshot.val();
+        
         await Promise.all(
-            joueursSelectionnes.map(async (nom) => {
-                const joueurRef = ref(database, 'joueurs/' + nom);
-                const joueurSnap = await get(joueurRef);
-                const joueur = joueurSnap.val();
-                await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
+            Object.keys(joueursData).map(async (key) => {
+                const joueur = joueursData[key];
+                const joueurRef = ref(database, 'joueurs/' + key);
+                
+                // Vérifiez si le joueur a joué ce match
+                if (joueursSelectionnes.includes(joueur.nom)) {
+                    // Incrémentez les matchs joués
+                    await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
+                } else {
+                    // Incrémentez les matchs attendus
+                    await update(joueurRef, { matchsAttendus: (joueur.matchsAttendus || 0) + 1 });
+                }
             })
         );
 
@@ -280,6 +290,9 @@ btnFinir.addEventListener('click', async () => {
 
         // Supprime le match en cours de Firebase
         await remove(matchRef);
+
+        // Actualiser l'affichage des joueurs pour refléter les mises à jour
+        afficherJoueurs(joueursData); // Appel pour mettre à jour l'affichage
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
     }
