@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion de Match</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Inclure le SDK Firebase en mode module -->
     <script type="module" src="script.js" defer></script>
 </head>
 
@@ -14,15 +13,15 @@
     <div class="container">
         <h1>Gestion de Match de 4 Joueurs</h1>
 
-        <h2>Inscription</h2>
+        <h2>
+            <span>Liste d'Inscription</span> / <span>Sélectionner Joueurs</span>
+        </h2>
+        
         <input type="text" id="nomJoueur" placeholder="Nom du joueur" aria-label="Nom du joueur">
         <button id="btnInscrire">S'inscrire</button>
         <button id="btnReinitialiser">Réinitialiser</button>
 
-        <h2>Liste d'Inscription</h2>
         <ul id="listeJoueurs"></ul>
-
-        <h2>Sélectionner Joueurs</h2>
         <ul id="selectionJoueurs"></ul>
         <button id="btnCommencer" disabled>Commencer Match</button>
         <div id="messageMatch"></div>
@@ -32,8 +31,7 @@
         <ul id="historiqueMatchs"></ul>
     </div>
 
-    <!-- Mettre à jour la version ici -->
-    <p id="version" style="text-align: center; margin-top: 20px; color: #555;">Version 1.6</p>
+    <p id="version" style="text-align: center; margin-top: 20px; color: #555;">Version 1.7</p>
 </body>
 
 </html>
