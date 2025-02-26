@@ -11,7 +11,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-// Sélection des éléments DOM
+// Sélectionner les boutons et les éléments DOM
 const btnInscrire = document.getElementById('btnInscrire');
 const btnCommencer = document.getElementById('btnCommencer');
 const btnFinir = document.getElementById('btnFinir');
@@ -32,11 +32,24 @@ const historiqueMatchsRef = ref(database, 'historiqueMatchs');
 onValue(listeJoueursRef, (snapshot) => {
     const data = snapshot.val();
     afficherJoueurs(data);
-    mettreAJourJoueursSelectionnes(data);
+    mettreAJourJoueursSelectionnes(data); // Met à jour les joueurs sélectionnés
 });
 
-// ... (le reste de la configuration Firebase et des écouter)
+// Écouter les changements sur le match en cours
+onValue(matchRef, (snapshot) => {
+    const matchData = snapshot.val();
+    if (matchData) {
+        messageMatch.textContent = `Match en cours: ${matchData.joueurs.join(', ')}`;
+        joueursSelectionnes = matchData.joueurs;
+        setBoutonEtatMatchEnCours();
+    } else {
+        messageMatch.textContent = '';
+        joueursSelectionnes = [];
+        setBoutonEtatMatchNonEnCours();
+    }
+});
 
+// Afficher les joueurs inscrits
 function afficherJoueurs(data) {
     listeJoueurs.innerHTML = ''; // Vide la liste avant de la remplir
     if (data) {
@@ -62,8 +75,8 @@ function afficherJoueurs(data) {
                         if (joueursSelectionnes.length < 4) {
                             joueursSelectionnes.push(nom);
                         } else {
-                            // Si 4 joueurs sont déjà sélectionnés, vous ne pouvez pas en sélectionner un de plus
-                            checkbox.checked = false; // Re-désélectionner la case à cocher
+                            // Si 4 joueurs sont déjà sélectionnés, ne pas permettre la sélection
+                            checkbox.checked = false; // Décochez la case
                             alert("Vous ne pouvez sélectionner que 4 joueurs !");
                         }
                     } else {
@@ -71,8 +84,8 @@ function afficherJoueurs(data) {
                         joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                     }
 
-                    // Vérifiez si 4 joueurs sont sélectionnés pour activer/désactiver le bouton "Commencer Match"
-                    btnCommencer.disabled = joueursSelectionnes.length !== 4;
+                    // Mettez à jour l'état du bouton seulement ici
+                    btnCommencer.disabled = joueursSelectionnes.length !== 4; // Actualisez le statut ici
                 });
 
                 li.appendChild(checkbox);
@@ -83,36 +96,4 @@ function afficherJoueurs(data) {
     }
 }
 
-// Démarrer le match
-btnCommencer.addEventListener('click', async () => {
-    if (joueursSelectionnes.length === 4) {
-        // Création des données du match
-        const matchData = {
-            date: new Date().toISOString(),
-            joueurs: joueursSelectionnes
-        };
-
-        try {
-            await set(matchRef, matchData);
-            messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
-            // Désactiver le bouton "Commencer" immédiatement pour éviter les doubles clics
-            btnCommencer.disabled = true;
-
-            // Réinitialiser les matchs attendus pour tous les joueurs sélectionnés
-            for (const nom of joueursSelectionnes) {
-                const joueurRef = ref(database, 'joueurs/' + nom);
-                await update(joueurRef, { matchsAttendus: 0 }); // Reset des matchs attendus
-            }
-
-            // Afficher l'état avec le match en cours
-            setBoutonEtatMatchEnCours();
-        } catch (error) {
-            console.error("Erreur lors du démarrage du match :", error);
-            alert("Une erreur est survenue lors du démarrage du match. Veuillez réessayer.");
-        }
-    } else {
-        alert("Veuillez sélectionner 4 joueurs avant de commencer le match.");
-    }
-});
-
-// ... (le reste des fonctions pour finir le match, les inscriptions, etc.)
+// ... les autres fonctions restent identiques ...
