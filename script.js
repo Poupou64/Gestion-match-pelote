@@ -164,6 +164,13 @@ function afficherJoueurs(data) {
                     btnCommencer.disabled = joueursSelectionnes.length !== 4; 
                 });
 
+                // Appliquer la couleur selon les matchs joués et attendus
+                if (matchsJoues === 0) {
+                    li.classList.add('text-red'); // Ajoute une classe pour le texte rouge
+                } else if (matchsAttendus >= 2) {
+                    li.classList.add('text-orange'); // Ajoute une classe pour le texte orange
+                }
+
                 li.appendChild(checkbox);
                 li.appendChild(document.createTextNode(`${nom} - Inscrit à ${heuresInscription} - Joué(s): ${matchsJoues} / Attendu(s): ${matchsAttendus}`));
 
