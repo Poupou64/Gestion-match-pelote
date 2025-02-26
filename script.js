@@ -253,7 +253,7 @@ btnFinir.addEventListener('click', async () => {
         matchHistoryItemElement.textContent = `${matchHistoryItem.date} - Terminé: ${joueursSelectionnes.join(', ')}`;
         historiqueMatchs.insertBefore(matchHistoryItemElement, historiqueMatchs.firstChild);
 
-        // Mettre à jour les matchs joués et attendus pour chaque joueur
+        // Mettre à jour les matchs joués et réinitialiser les matchs attendus
         const tousLesJoueursRef = ref(database, 'joueurs');
         const snapshot = await get(tousLesJoueursRef);
         const joueursData = snapshot.val();
@@ -263,12 +263,11 @@ btnFinir.addEventListener('click', async () => {
                 const joueur = joueursData[key];
                 const joueurRef = ref(database, 'joueurs/' + key);
                 
-                // Vérifiez si le joueur a joué ce match
                 if (joueursSelectionnes.includes(joueur.nom)) {
-                    // Incrémentez les matchs joués et réinitialisez les matchs attendus à 0
+                    // Si le joueur a joué, incrémentez les matchs joués et réinitialisez les matchs attendus à 0
                     await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1, matchsAttendus: 0, selectionne: false });
                 } else {
-                    // Incrémentez les matchs attendus
+                    // Sinon, incrémentez les matchs attendus
                     await update(joueurRef, { matchsAttendus: (joueur.matchsAttendus || 0) + 1 });
                 }
             })
