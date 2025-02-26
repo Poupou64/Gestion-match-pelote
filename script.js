@@ -190,7 +190,10 @@ function afficherJoueurs(data) {
                 btnDesinscrire.textContent = 'Désinscrire';
                 btnDesinscrire.onclick = () => {
                     const joueurRef = ref(database, 'joueurs/' + key);
-                    remove(joueurRef);
+                    const confirmation = confirm("Êtes-vous sûr de vouloir désinscrire ce joueur ?");
+                    if (confirmation) {
+                        remove(joueurRef);
+                    }
                 };
 
                 li.appendChild(btnDesinscrire);
