@@ -283,7 +283,6 @@ btnFinir.addEventListener('click', async () => {
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
         checkboxes.forEach(async (checkbox) => {
             checkbox.checked = false; // Déselectionner visuellement
-            checkbox.disabled = false; // Permettre la sélection de nouveaux joueurs
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
             await update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
         });
@@ -291,12 +290,11 @@ btnFinir.addEventListener('click', async () => {
         // Supprime le match en cours de Firebase
         await remove(matchRef);
 
-        // Mise à jour de l'affichage des joueurs (pour refléter les désélections)
-        afficherJoueurs(joueursData);
-        
         // Récupérer à nouveau les joueurs mis à jour depuis Firebase
         const updatedSnapshot = await get(listeJoueursRef);
         const updatedJoueursData = updatedSnapshot.val();
+
+        // Afficher les joueurs pour refléter les désélections
         afficherJoueurs(updatedJoueursData);
         
     } catch (error) {
