@@ -149,15 +149,16 @@ function afficherJoueurs(data) {
                     const joueurRef = ref(database, 'joueurs/' + key);
                     update(joueurRef, { selectionne: checkbox.checked });
 
-                    // Mettre à jour les joueurs sélectionnés localement
+                    // Gérer la sélection des joueurs
                     if (checkbox.checked) {
                         if (joueursSelectionnes.length < 4) {
                             joueursSelectionnes.push(nom);
                         } else {
+                            checkbox.checked = false; // Re-désélectionner la case à cocher
                             alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                            checkbox.checked = false; // Re-désélectionner visuellement
                         }
                     } else {
+                        // Si la case est décochée, retirer le joueur de la liste des sélectionnés
                         joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                     }
 
@@ -319,4 +320,4 @@ nomJoueurInput.addEventListener('keypress', (event) => {
 });
 
 // Version
-console.log("Version 1.5");
+console.log("Version 1.7");
