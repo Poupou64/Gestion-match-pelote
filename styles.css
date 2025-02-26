@@ -15,7 +15,23 @@ body {
 }
 
 button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
     margin-top: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 ul {
@@ -25,6 +41,36 @@ ul {
 
 li {
     margin: 8px 0;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: background-color 0.3s ease;
+}
+
+li:hover {
+    background-color: #f0f0f0;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+h1 {
+    border-bottom: 2px solid #007BFF;
+    padding-bottom: 10px;
+}
+
+h2 {
+    margin-top: 20px;
+}
+
+#messageMatch {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #e9ecef;
+    border-radius: 5px;
 }
 
 .text-red {
@@ -33,4 +79,11 @@ li {
 
 .text-orange {
     color: orange;
+}
+
+#version {
+    text-align: center;
+    margin-top: 20px;
+    color: #555;
+    font-size: 14px; /* Modifier la taille de la police selon vos préférences */
 }
