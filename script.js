@@ -1,6 +1,6 @@
 // Imports de Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, update, query, orderByChild, equalTo, get, push } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, push, get, remove } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
 // Configuration Firebase
 const firebaseConfig = {
@@ -18,275 +18,139 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-// Sélectionner les boutons et les éléments DOM
-const btnInscrire = document.getElementById('btnInscrire');
-const btnCommencer = document.getElementById('btnCommencer');
-const btnFinir = document.getElementById('btnFinir');
-const btnReinitialiser = document.getElementById('btnReinitialiser');
-const nomJoueurInput = document.getElementById('nomJoueur');
-const listeJoueurs = document.getElementById('listeJoueurs');
-const messageMatch = document.getElementById('messageMatch');
-const historiqueMatchs = document.getElementById('historiqueMatchs');
-
-let joueursSelectionnes = [];
-
 // Références Firebase
-const listeJoueursRef = ref(database, 'joueurs');
+const joueursRef = ref(database, 'joueurs');
 const matchRef = ref(database, 'matchEnCours');
 const historiqueMatchsRef = ref(database, 'historiqueMatchs');
 
-// Écouter les changements sur la liste de joueurs
-onValue(listeJoueursRef, (snapshot) => {
+// Gérer les événements de matchs
+function gererMatch(joueursSelectionnes) {
+    // Commencer le match
+    set(matchRef, { joueurs: joueursSelectionnes });
+
+    // Lorsque le match est fini
+    async function finirMatch() {
+        const matchHistoryItem = {
+            date: new Date().toLocaleString(),
+            joueurs: joueursSelectionnes 
+        };
+    
+        await push(historiqueMatchsRef, matchHistoryItem); // Pousser à l'historique
+
+        // Mettre à jour les matchs joués pour chaque joueur
+        for (const nom of joueursSelectionnes) {
+            const joueurRef = ref(database, `joueurs/${nom}`);
+            const joueurSnap = await get(joueurRef);
+            const joueur = joueurSnap.val() || { matchsJoues: 0, matchsAttendus: 0 }; // Initialiser si besoin
+
+            // Incrémenter "Joué(s)"
+            await update(joueurRef, { matchsJoues: joueur.matchsJoues + 1 });
+
+            // Incrémenter "Attendu(s)" pour les autres joueurs
+            const tousLesJoueursSnap = await get(joueursRef);
+            if (tousLesJoueursSnap.exists()) {
+                const tousLesJoueurs = tousLesJoueursSnap.val();
+                for (const key in tousLesJoueurs) {
+                    if (!joueursSelectionnes.includes(tousLesJoueurs[key].nom)) {
+                        const joueurAttenduRef = ref(database, `joueurs/${key}`);
+                        const joueurAttenduSnap = await get(joueurAttenduRef);
+                        const joueurAttendu = joueurAttenduSnap.val() || { matchsAttendus: 0 }; // Initialiser si besoin
+
+                        // Incrémenter "Attendu(s)"
+                        await update(joueurAttenduRef, { matchsAttendus: joueurAttendu.matchsAttendus + 1 });
+                    }
+                }
+            }
+        }
+
+        // Réinitialiser l'état
+        await remove(matchRef);
+    }
+
+    // Attacher un événement pour finir le match
+    document.getElementById('btnFinir').addEventListener('click', finirMatch);
+}
+
+// Écouter les changements sur les joueurs
+onValue(joueursRef, (snapshot) => {
     const data = snapshot.val();
     afficherJoueurs(data);
 });
 
-// Écouter les changements sur le match en cours
-onValue(matchRef, (snapshot) => {
-    const matchData = snapshot.val();
-    if (matchData) {
-        messageMatch.textContent = `Match en cours: ${matchData.joueurs.join(', ')}`;
-        joueursSelectionnes = matchData.joueurs;
-        setBoutonEtatMatchEnCours();
-    } else {
-        messageMatch.textContent = '';
-        joueursSelectionnes = [];
-        setBoutonEtatMatchNonEnCours();
-    }
-});
-
-// Écouter les changements sur l'historique des matchs
-onValue(historiqueMatchsRef, (snapshot) => {
-    const data = snapshot.val();
-    historiqueMatchs.innerHTML = '';
-    if (data) {
-        for (const key in data) {
-            const match = data[key];
-            const li = document.createElement('li');
-            li.textContent = `${match.date} - Terminé: ${match.joueurs.join(', ')}`;
-            historiqueMatchs.appendChild(li);
-        }
-    }
-});
-
-// Vérifier si le nom du joueur est déjà inscrit
-async function nomJoueurDejaInscrit(nom) {
-    const joueursRef = ref(database, 'joueurs');
-    const joueursQuery = query(joueursRef, orderByChild('nom'), equalTo(nom));
-    const snapshot = await get(joueursQuery);
-    return snapshot.exists();
-}
-
-// Fonction d'inscription
-async function inscrireJoueur() {
-    const nomJoueur = nomJoueurInput.value.trim();
-    if (nomJoueur) {
-        if (await nomJoueurDejaInscrit(nomJoueur)) {
-            alert("Ce joueur est déjà inscrit !");
-            return;
-        }
-
-        const newPlayerRef = ref(database, 'joueurs/' + Date.now());
-        try {
-            await set(newPlayerRef, {
-                nom: nomJoueur,
-                heuresInscription: new Date().toLocaleTimeString(),
-                matchsJoues: 0,
-                matchsAttendus: 0,
-                selectionne: false
-            });
-            nomJoueurInput.value = ''; // Réinitialiser le champ après l'inscription
-        } catch (error) {
-            console.error("Erreur lors de l'inscription du joueur : ", error);
-            alert("Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
-        }
-    } else {
-        alert("Veuillez entrer un nom valide !");
-    }
-}
-
-// Réinitialiser la liste et l'historique
-async function reinitialiserListe() {
-    const confirmation = confirm("Êtes-vous sûr de vouloir réinitialiser ? Cela supprimera la liste des inscrits et l'historique des matchs.");
-    if (confirmation) {
-        try {
-            await remove(listeJoueursRef);
-            await remove(matchRef);
-            await remove(historiqueMatchsRef);
-            joueursSelectionnes = [];
-            historiqueMatchs.innerHTML = '';
-            messageMatch.textContent = '';
-            setBoutonEtatMatchNonEnCours();
-        } catch (error) {
-            console.error("Erreur lors de la réinitialisation de la base de données :", error);
-            alert("Une erreur est survenue lors de la réinitialisation. Veuillez réessayer.");
-        }
-    }
-}
-
-// Afficher les joueurs inscrits
+// Afficher les joueurs
 function afficherJoueurs(data) {
+    const listeJoueurs = document.getElementById('listeJoueurs');
     listeJoueurs.innerHTML = '';
     if (data) {
         for (const key in data) {
             const joueur = data[key];
 
-            // Vérifiez que le joueur a un nom valide avant d'afficher
-            if (joueur && joueur.nom && joueur.heuresInscription) {
-                const nom = joueur.nom;
-                const heuresInscription = joueur.heuresInscription;
-                const matchsJoues = joueur.matchsJoues || 0;
-                const matchsAttendus = joueur.matchsAttendus || 0;
-
-                const li = document.createElement('li');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `joueur${key}`;
-                checkbox.value = key;
-                checkbox.checked = joueur.selectionne || false;
-
-                checkbox.addEventListener('change', () => {
-                    const joueurRef = ref(database, 'joueurs/' + key);
-                    update(joueurRef, { selectionne: checkbox.checked });
-
-                    if (checkbox.checked) {
-                        if (joueursSelectionnes.length < 4) {
-                            joueursSelectionnes.push(nom);
-                        } else {
-                            alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                            checkbox.checked = false; // Re-désélectionner visuellement
-                        }
-                    } else {
-                        joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
-                    }
-
-                    // Mettre à jour l'état du bouton "Commencer Match"
-                    btnCommencer.disabled = joueursSelectionnes.length !== 4; 
-                });
-
-                // Créer des éléments pour les matchs joués et attendus
-                const matchsJouesSpan = document.createElement('span');
-                matchsJouesSpan.textContent = `Joué(s): ${matchsJoues}`;
-                const matchsAttendusSpan = document.createElement('span');
-                matchsAttendusSpan.textContent = `Attendu(s): ${matchsAttendus}`;
-
-                // Appliquer la couleur selon les matchs joués et attendus
-                if (matchsJoues === 0) {
-                    matchsJouesSpan.classList.add('text-red'); // Classe pour le texte rouge
-                }
-                if (matchsAttendus >= 2) {
-                    matchsAttendusSpan.classList.add('text-orange'); // Classe pour le texte orange
-                }
-
-                // Créer le texte final et l'ajouter à la liste
-                li.appendChild(checkbox);
-                li.appendChild(document.createTextNode(`${nom} - Inscrit à ${heuresInscription} - `));
-                li.appendChild(matchsJouesSpan);
-                li.appendChild(document.createTextNode(' / '));
-                li.appendChild(matchsAttendusSpan);
-
-                // Ajout du bouton pour désinscription
-                const btnDesinscrire = document.createElement('button');
-                btnDesinscrire.textContent = 'Désinscrire';
-                btnDesinscrire.onclick = () => {
-                    const joueurRef = ref(database, 'joueurs/' + key);
-                    remove(joueurRef);
-                };
-
-                li.appendChild(btnDesinscrire);
-                listeJoueurs.appendChild(li);
-            }
+            const li = document.createElement('li');
+            li.textContent = `${joueur.nom} - Joué(s): ${joueur.matchsJoues || 0} - Attendu(s): ${joueur.matchsAttendus || 0}`;
+            listeJoueurs.appendChild(li);
         }
     }
 }
 
-// Fonctions pour gérer l'état des boutons
-function setBoutonEtatMatchEnCours() {
-    btnFinir.disabled = false; 
-    btnCommencer.disabled = true; 
-}
+// Exécution de l'application
+const btnInscrire = document.getElementById('btnInscrire');
+const btnCommencer = document.getElementById('btnCommencer');
+const btnReinitialiser = document.getElementById('btnReinitialiser');
+let joueursSelectionnes = []; // Liste pour les joueurs sélectionnés
 
-function setBoutonEtatMatchNonEnCours() {
-    btnFinir.disabled = true; 
-    btnCommencer.disabled = false; 
-}
+// Gérer l'inscription des joueurs
+btnInscrire.addEventListener('click', () => {
+    const nomJoueurInput = document.getElementById('nomJoueur');
+    const nomJoueur = nomJoueurInput.value.trim();
 
-// Démarrer le match
-btnCommencer.addEventListener('click', async () => {
+    if (nomJoueur) {
+        const joueurRef = ref(database, `joueurs/${nomJoueur}`);
+
+        set(joueurRef, { nom: nomJoueur, matchsJoues: 0, matchsAttendus: 0 })
+            .then(() => {
+                console.log(`Joueur ${nomJoueur} inscrit!`);
+                nomJoueurInput.value = ''; // Réinitialiser le champ
+            })
+            .catch((error) => {
+                console.error("Erreur d'inscription: ", error);
+            });
+    } else {
+        alert('Veuillez entrer un nom valide.');
+    }
+});
+
+// Gérer la réinitialisation
+btnReinitialiser.addEventListener('click', () => {
+    joueursSelectionnes = [];
+    document.getElementById('listeJoueurs').innerHTML = ''; // Réinitialiser la liste à afficher
+    console.log("Liste de joueurs réinitialisée.");
+});
+
+// Gérer le début du match
+btnCommencer.addEventListener('click', () => {
+    // Validation avant de commencer le match
     if (joueursSelectionnes.length === 4) {
-        const matchData = {
-            date: new Date().toISOString(),
-            joueurs: joueursSelectionnes
-        };
-
-        try {
-            await set(matchRef, matchData);
-            messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
-            setBoutonEtatMatchEnCours();
-
-            for (const nom of joueursSelectionnes) {
-                const joueurRef = ref(database, 'joueurs/' + nom);
-                await update(joueurRef, { matchsAttendus: 0 });
-            }
-        } catch (error) {
-            console.error("Erreur lors du démarrage du match :", error);
-            alert("Une erreur est survenue lors du démarrage du match. Veuillez réessayer.");
-        }
+        gererMatch(joueursSelectionnes);
     } else {
         alert("Veuillez sélectionner 4 joueurs avant de commencer le match.");
     }
 });
 
-// Finir le match
-btnFinir.addEventListener('click', async () => {
-    const matchHistoryItem = {
-        date: new Date().toLocaleString(),
-        joueurs: joueursSelectionnes
-    };
-
-    try {
-        await push(historiqueMatchsRef, matchHistoryItem); // Pousser à l'historique
-
-        const matchHistoryItemElement = document.createElement('li');
-        matchHistoryItemElement.textContent = `${matchHistoryItem.date} - Terminé: ${joueursSelectionnes.join(', ')}`;
-        historiqueMatchs.insertBefore(matchHistoryItemElement, historiqueMatchs.firstChild);
-
-        // Mettre à jour les matchs joués pour chaque joueur
-        await Promise.all(
-            joueursSelectionnes.map(async (nom) => {
-                const joueurRef = ref(database, 'joueurs/' + nom);
-                const joueurSnap = await get(joueurRef);
-                const joueur = joueurSnap.val();
-                await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
-            })
-        );
-
-        // Réinitialiser l'état pour permettre un nouveau match
-        messageMatch.textContent = '';
-        joueursSelectionnes = [];
-        btnFinir.disabled = true; // Griser le bouton
-
-        // Déselectionner tous les checkboxes et mettre à jour Firebase
-        const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false; // Déselectionner visuellement
-            checkbox.disabled = false; // Permettre la sélection de nouveaux joueurs
-            const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-            update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
-        });
-
-        // Supprime le match en cours de Firebase
-        await remove(matchRef);
-    } catch (error) {
-        console.error("Erreur lors de l'enregistrement dans l'historique :", error);
+// Exemple de sélection des joueurs (ajoutez votre logique de sélection ici)
+const selectJoueur = (nomJoueur) => {
+    if (!joueursSelectionnes.includes(nomJoueur)) {
+        joueursSelectionnes.push(nomJoueur);
+        console.log(`${nomJoueur} sélectionné.`);
+    } else {
+        alert(`${nomJoueur} est déjà sélectionné.`);
     }
-});
+};
 
-// Écoutez les événements
-btnInscrire.addEventListener('click', inscrireJoueur);
-btnReinitialiser.addEventListener('click', reinitialiserListe);
-nomJoueurInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        inscrireJoueur();
-    }
+// Remplacer cette logique par des boutons dans l'interface utilisateur
+// Exemple de sélection par bouton
+document.querySelectorAll('.select-joueur').forEach(button => {
+    button.addEventListener('click', () => {
+        const nomJoueur = button.getAttribute('data-nom'); // Assurez-vous que les boutons ont cet attribut
+        selectJoueur(nomJoueur);
+    });
 });
