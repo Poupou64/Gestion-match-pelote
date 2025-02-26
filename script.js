@@ -291,8 +291,9 @@ btnFinir.addEventListener('click', async () => {
         // Supprime le match en cours de Firebase
         await remove(matchRef);
 
-        // Actualiser l'affichage des joueurs pour refléter les mises à jour
-        afficherJoueurs(joueursData); // Appel pour mettre à jour l'affichage
+        // Mise à jour de l'affichage des joueurs (pour refléter les désélections)
+        afficherJoueurs(joueursData);
+        
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
     }
@@ -306,3 +307,6 @@ nomJoueurInput.addEventListener('keypress', (event) => {
         inscrireJoueur();
     }
 });
+
+// Version
+console.log("Version 1.2");
