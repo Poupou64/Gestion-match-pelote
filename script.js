@@ -49,7 +49,7 @@ onValue(matchRef, (snapshot) => {
         joueursSelectionnes = matchData.joueurs;
         setBoutonEtatMatchEnCours();
     } else {
-        messageMatch.textContent = ''; 
+        messageMatch.textContent = '';
         joueursSelectionnes = [];
         setBoutonEtatMatchNonEnCours();
     }
@@ -58,7 +58,7 @@ onValue(matchRef, (snapshot) => {
 // Écouter les changements sur l'historique des matchs
 onValue(historiqueMatchsRef, (snapshot) => {
     const data = snapshot.val();
-    historiqueMatchs.innerHTML = ''; 
+    historiqueMatchs.innerHTML = '';
     if (data) {
         for (const key in data) {
             const match = data[key];
@@ -132,9 +132,9 @@ function afficherJoueurs(data) {
             const joueur = data[key];
 
             // Vérifiez que le joueur a un nom valide avant d'afficher
-            if (joueur.nom) {
+            if (joueur && joueur.nom && joueur.heuresInscription) {
                 const nom = joueur.nom;
-                const heuresInscription = joueur.heuresInscription || "Heure non spécifiée";
+                const heuresInscription = joueur.heuresInscription;
                 const matchsJoues = joueur.matchsJoues || 0;
                 const matchsAttendus = joueur.matchsAttendus || 0;
 
@@ -258,7 +258,7 @@ btnFinir.addEventListener('click', async () => {
         });
 
         // Supprime le match en cours de Firebase
-        await remove(matchRef); 
+        await remove(matchRef);
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
     }
