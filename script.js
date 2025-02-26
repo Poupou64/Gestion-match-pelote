@@ -265,8 +265,8 @@ btnFinir.addEventListener('click', async () => {
                 
                 // Vérifiez si le joueur a joué ce match
                 if (joueursSelectionnes.includes(joueur.nom)) {
-                    // Incrémentez les matchs joués
-                    await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
+                    // Incrémentez les matchs joués et désélectionnez le joueur
+                    await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1, selectionne: false });
                 } else {
                     // Incrémentez les matchs attendus
                     await update(joueurRef, { matchsAttendus: (joueur.matchsAttendus || 0) + 1 });
