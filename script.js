@@ -265,8 +265,8 @@ btnFinir.addEventListener('click', async () => {
                 
                 // Vérifiez si le joueur a joué ce match
                 if (joueursSelectionnes.includes(joueur.nom)) {
-                    // Incrémentez les matchs joués et désélectionnez le joueur
-                    await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1, selectionne: false });
+                    // Incrémentez les matchs joués et réinitialisez les matchs attendus à 0
+                    await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1, matchsAttendus: 0, selectionne: false });
                 } else {
                     // Incrémentez les matchs attendus
                     await update(joueurRef, { matchsAttendus: (joueur.matchsAttendus || 0) + 1 });
@@ -312,4 +312,4 @@ nomJoueurInput.addEventListener('keypress', (event) => {
 });
 
 // Version
-console.log("Version 1.3");
+console.log("Version 1.4");
