@@ -39,6 +39,7 @@ const historiqueMatchsRef = ref(database, 'historiqueMatchs');
 onValue(listeJoueursRef, (snapshot) => {
     const data = snapshot.val();
     afficherJoueurs(data);
+    mettreAJourJoueursSelectionnes(data); // Met à jour les joueurs sélectionnés
 });
 
 // Écouter les changements sur le match en cours
@@ -77,7 +78,7 @@ async function nomJoueurDejaInscrit(nom) {
     return snapshot.exists();
 }
 
-// Fonction d'inscription
+// Fonction d'inscription du joueur
 async function inscrireJoueur() {
     const nomJoueur = nomJoueurInput.value.trim();
     if (nomJoueur) {
@@ -148,6 +149,7 @@ function afficherJoueurs(data) {
                     const joueurRef = ref(database, 'joueurs/' + key);
                     update(joueurRef, { selectionne: checkbox.checked });
 
+                    // Mettre à jour les joueurs sélectionnés localement
                     if (checkbox.checked) {
                         if (joueursSelectionnes.length < 4) {
                             joueursSelectionnes.push(nom);
@@ -159,7 +161,7 @@ function afficherJoueurs(data) {
                         joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                     }
 
-                    // Mettre à jour l'état du bouton "Commencer Match"
+                    // Vérifiez si 4 joueurs sont sélectionnés pour activer le bouton "Commencer Match"
                     btnCommencer.disabled = joueursSelectionnes.length !== 4; 
                 });
 
@@ -202,6 +204,19 @@ function afficherJoueurs(data) {
     }
 }
 
+// Mettre à jour les joueurs sélectionnés
+function mettreAJourJoueursSelectionnes(data) {
+    joueursSelectionnes = []; // Réinitialiser la liste des joueurs sélectionnés
+    for (const key in data) {
+        const joueur = data[key];
+        if (joueur && joueur.selectionne) {
+            joueursSelectionnes.push(joueur.nom);
+        }
+    }
+    // Vérifiez si 4 joueurs sont sélectionnés pour activer le bouton "Commencer Match"
+    btnCommencer.disabled = joueursSelectionnes.length !== 4;
+}
+
 // Fonctions pour gérer l'état des boutons
 function setBoutonEtatMatchEnCours() {
     btnFinir.disabled = false; 
@@ -226,6 +241,7 @@ btnCommencer.addEventListener('click', async () => {
             messageMatch.textContent = `Match en cours: ${joueursSelectionnes.join(', ')}`;
             setBoutonEtatMatchEnCours();
 
+            // Réinitialiser les matchs attendus pour tous les joueurs sélectionnés
             for (const nom of joueursSelectionnes) {
                 const joueurRef = ref(database, 'joueurs/' + nom);
                 await update(joueurRef, { matchsAttendus: 0 }); // Reset des matchs attendus
@@ -278,14 +294,6 @@ btnFinir.addEventListener('click', async () => {
         joueursSelectionnes = [];
         btnFinir.disabled = true; // Griser le bouton
 
-        // Déselectionner tous les checkboxes et mettre à jour Firebase
-        const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
-        checkboxes.forEach(async (checkbox) => {
-            checkbox.checked = false; // Déselectionner visuellement
-            const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-            await update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
-        });
-
         // Supprime le match en cours de Firebase
         await remove(matchRef);
 
@@ -311,4 +319,4 @@ nomJoueurInput.addEventListener('keypress', (event) => {
 });
 
 // Version
-console.log("Version 1.4");
+console.log("Version 1.5");
