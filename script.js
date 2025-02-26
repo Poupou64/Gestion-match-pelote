@@ -73,7 +73,6 @@ onValue(historiqueMatchsRef, (snapshot) => {
 async function nomJoueurDejaInscrit(nom) {
     const joueursRef = ref(database, 'joueurs');
     const joueursQuery = query(joueursRef, orderByChild('nom'), equalTo(nom));
-
     const snapshot = await get(joueursQuery);
     return snapshot.exists();
 }
@@ -132,51 +131,53 @@ function afficherJoueurs(data) {
         for (const key in data) {
             const joueur = data[key];
 
-            // Vérifiez si le joueur a un nom valide
-            const nom = joueur.nom || "Nom inexistant";
-            const heuresInscription = joueur.heuresInscription || "Heure non spécifiée";
-            const matchsJoues = joueur.matchsJoues || 0;
-            const matchsAttendus = joueur.matchsAttendus || 0;
+            // Vérifiez que le joueur a un nom valide avant d'afficher
+            if (joueur.nom) {
+                const nom = joueur.nom;
+                const heuresInscription = joueur.heuresInscription || "Heure non spécifiée";
+                const matchsJoues = joueur.matchsJoues || 0;
+                const matchsAttendus = joueur.matchsAttendus || 0;
 
-            const li = document.createElement('li');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `joueur${key}`;
-            checkbox.value = key;
-            checkbox.checked = joueur.selectionne || false;
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `joueur${key}`;
+                checkbox.value = key;
+                checkbox.checked = joueur.selectionne || false;
 
-            checkbox.addEventListener('change', () => {
-                const joueurRef = ref(database, 'joueurs/' + key);
-                update(joueurRef, { selectionne: checkbox.checked }); // Mise à jour dans Firebase
+                checkbox.addEventListener('change', () => {
+                    const joueurRef = ref(database, 'joueurs/' + key);
+                    update(joueurRef, { selectionne: checkbox.checked });
 
-                if (checkbox.checked) {
-                    if (joueursSelectionnes.length < 4) {
-                        joueursSelectionnes.push(nom);
+                    if (checkbox.checked) {
+                        if (joueursSelectionnes.length < 4) {
+                            joueursSelectionnes.push(nom);
+                        } else {
+                            alert("Vous ne pouvez sélectionner que 4 joueurs !");
+                            checkbox.checked = false; // Re-désélectionner visuellement
+                        }
                     } else {
-                        alert("Vous ne pouvez sélectionner que 4 joueurs !");
-                        checkbox.checked = false; // Re-désélectionner visuellement
+                        joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
                     }
-                } else {
-                    joueursSelectionnes = joueursSelectionnes.filter(j => j !== nom);
-                }
 
-                // Mettre à jour l'état du bouton "Commencer Match"
-                btnCommencer.disabled = joueursSelectionnes.length !== 4; 
-            });
+                    // Mettre à jour l'état du bouton "Commencer Match"
+                    btnCommencer.disabled = joueursSelectionnes.length !== 4; 
+                });
 
-            li.appendChild(checkbox);
-            li.appendChild(document.createTextNode(`${nom} - Inscrit à ${heuresInscription} - Joué(s): ${matchsJoues} / Attendu(s): ${matchsAttendus}`));
+                li.appendChild(checkbox);
+                li.appendChild(document.createTextNode(`${nom} - Inscrit à ${heuresInscription} - Joué(s): ${matchsJoues} / Attendu(s): ${matchsAttendus}`));
 
-            // Ajout du bouton pour désinscription
-            const btnDesinscrire = document.createElement('button');
-            btnDesinscrire.textContent = 'Désinscrire';
-            btnDesinscrire.onclick = () => {
-                const joueurRef = ref(database, 'joueurs/' + key);
-                remove(joueurRef);
-            };
+                // Ajout du bouton pour désinscription
+                const btnDesinscrire = document.createElement('button');
+                btnDesinscrire.textContent = 'Désinscrire';
+                btnDesinscrire.onclick = () => {
+                    const joueurRef = ref(database, 'joueurs/' + key);
+                    remove(joueurRef);
+                };
 
-            li.appendChild(btnDesinscrire);
-            listeJoueurs.appendChild(li);
+                li.appendChild(btnDesinscrire);
+                listeJoueurs.appendChild(li);
+            }
         }
     }
 }
