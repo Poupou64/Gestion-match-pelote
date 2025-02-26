@@ -281,11 +281,11 @@ btnFinir.addEventListener('click', async () => {
 
         // Déselectionner tous les checkboxes et mettre à jour Firebase
         const checkboxes = document.querySelectorAll('#listeJoueurs input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
+        checkboxes.forEach(async (checkbox) => {
             checkbox.checked = false; // Déselectionner visuellement
             checkbox.disabled = false; // Permettre la sélection de nouveaux joueurs
             const joueurRef = ref(database, 'joueurs/' + checkbox.value);
-            update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
+            await update(joueurRef, { selectionne: false }); // Mettre à jour le statut dans Firebase
         });
 
         // Supprime le match en cours de Firebase
@@ -293,6 +293,11 @@ btnFinir.addEventListener('click', async () => {
 
         // Mise à jour de l'affichage des joueurs (pour refléter les désélections)
         afficherJoueurs(joueursData);
+        
+        // Récupérer à nouveau les joueurs mis à jour depuis Firebase
+        const updatedSnapshot = await get(listeJoueursRef);
+        const updatedJoueursData = updatedSnapshot.val();
+        afficherJoueurs(updatedJoueursData);
         
     } catch (error) {
         console.error("Erreur lors de l'enregistrement dans l'historique :", error);
@@ -309,4 +314,4 @@ nomJoueurInput.addEventListener('keypress', (event) => {
 });
 
 // Version
-console.log("Version 1.2");
+console.log("Version 1.3");
