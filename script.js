@@ -24,9 +24,9 @@ const matchRef = ref(database, 'matchEnCours');
 const historiqueMatchsRef = ref(database, 'historiqueMatchs');
 
 // Gérer les événements de matchs
-function gererMatch(joueursSelectionnes) {
+async function gererMatch(joueursSelectionnes) {
     // Commencer le match
-    set(matchRef, { joueurs: joueursSelectionnes });
+    await set(matchRef, { joueurs: joueursSelectionnes });
 
     // Lorsque le match est fini
     async function finirMatch() {
@@ -34,34 +34,35 @@ function gererMatch(joueursSelectionnes) {
             date: new Date().toLocaleString(),
             joueurs: joueursSelectionnes 
         };
-    
-        await push(historiqueMatchsRef, matchHistoryItem); // Pousser à l'historique
 
-        // Mettre à jour les matchs joués pour chaque joueur
-        for (const nom of joueursSelectionnes) {
+        // Pousser à l'historique
+        await push(historiqueMatchsRef, matchHistoryItem);
+
+        // Mettre à jour les statistiques des joueurs
+        await Promise.all(joueursSelectionnes.map(async (nom) => {
             const joueurRef = ref(database, `joueurs/${nom}`);
             const joueurSnap = await get(joueurRef);
-            const joueur = joueurSnap.val() || { matchsJoues: 0, matchsAttendus: 0 }; // Initialiser si besoin
+            const joueur = joueurSnap.val() || { matchsJoues: 0, matchsAttendus: 0 }; // Initialisation si besoin
 
             // Incrémenter "Joué(s)"
-            await update(joueurRef, { matchsJoues: joueur.matchsJoues + 1 });
+            console.log(`Incrémentation de Joué(s) pour ${nom}`);
+            await update(joueurRef, { matchsJoues: (joueur.matchsJoues || 0) + 1 });
 
-            // Incrémenter "Attendu(s)" pour les autres joueurs
+            // Incrémentation "Attendu(s)" pour les autres joueurs
             const tousLesJoueursSnap = await get(joueursRef);
-            if (tousLesJoueursSnap.exists()) {
-                const tousLesJoueurs = tousLesJoueursSnap.val();
-                for (const key in tousLesJoueurs) {
-                    if (!joueursSelectionnes.includes(tousLesJoueurs[key].nom)) {
-                        const joueurAttenduRef = ref(database, `joueurs/${key}`);
-                        const joueurAttenduSnap = await get(joueurAttenduRef);
-                        const joueurAttendu = joueurAttenduSnap.val() || { matchsAttendus: 0 }; // Initialiser si besoin
+            const tousLesJoueurs = tousLesJoueursSnap.val();
+            for (const key in tousLesJoueurs) {
+                if (!joueursSelectionnes.includes(tousLesJoueurs[key].nom)) {
+                    const joueurAttenduRef = ref(database, `joueurs/${key}`);
+                    const joueurAttenduSnap = await get(joueurAttenduRef);
+                    const joueurAttendu = joueurAttenduSnap.val() || { matchsAttendus: 0 }; // Initialisation si besoin
 
-                        // Incrémenter "Attendu(s)"
-                        await update(joueurAttenduRef, { matchsAttendus: joueurAttendu.matchsAttendus + 1 });
-                    }
+                    // Incrémenter "Attendu(s)"
+                    console.log(`Incrémentation de Attendu(s) pour ${tousLesJoueurs[key].nom}`);
+                    await update(joueurAttenduRef, { matchsAttendus: (joueurAttendu.matchsAttendus || 0) + 1 });
                 }
             }
-        }
+        }));
 
         // Réinitialiser l'état
         await remove(matchRef);
@@ -84,7 +85,6 @@ function afficherJoueurs(data) {
     if (data) {
         for (const key in data) {
             const joueur = data[key];
-
             const li = document.createElement('li');
             li.textContent = `${joueur.nom} - Joué(s): ${joueur.matchsJoues || 0} - Attendu(s): ${joueur.matchsAttendus || 0}`;
             listeJoueurs.appendChild(li);
